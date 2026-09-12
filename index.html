@@ -73,7 +73,7 @@
         .badge-red { background: var(--danger); }
         .badge-yellow { background: var(--warning); color: #854d0e; }
         
-        .report-preview { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #334155; }
+        .report-preview { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #334151; }
         .report-thumbnail { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
 
         .prescription-box { border-left: 4px solid var(--success); padding-left: 15px; margin-top: 15px; background: #f9fafb; padding: 15px; border-radius: 8px; }
@@ -90,6 +90,14 @@
         .control-btn { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
         .btn-mute { background: #374151; color: white; }
         .btn-end { background: var(--danger); color: white; }
+
+        /* --- REPORT VIEWER MODAL --- */
+        .report-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .report-modal-content { background: white; width: 100%; max-width: 700px; max-height: 85vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); }
+        .report-modal-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+        .report-modal-body { padding: 20px; overflow-y: auto; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; background: #0f172a; }
+        .report-modal-body img { max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 6px; }
+        .close-modal-btn { background: var(--danger); color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -246,6 +254,19 @@
         </div>
     </div>
 
+    <!-- ================= 5. REPORT VIEWER MODAL ================= -->
+    <div id="report-viewer-modal" class="report-modal hidden">
+        <div class="report-modal-content">
+            <div class="report-modal-header">
+                <span id="modal-file-title">Medical Report Preview</span>
+                <button class="close-modal-btn" onclick="closeReportModal()">✕ Close</button>
+            </div>
+            <div class="report-modal-body" id="modal-body-container">
+                <!-- Dynamic content injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- ================= JAVASCRIPT ENGINE ================= -->
     <script>
         const VALID_PATIENTS = { 'pat1': 'pass1', 'pat2': 'pass2', 'pat3': 'pass3', 'pat4': 'pass4' };
@@ -256,7 +277,6 @@
         let uploadedFileBase64 = null;
         let uploadedFileName = null;
 
-        // Handle File Selection and convert to dataURL for cross-tab sharing
         function previewFile(event) {
             const file = event.target.files[0];
             if (file) {
@@ -265,7 +285,7 @@
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    uploadedFileBase64 = e.target.result; // Saves image/pdf as string data
+                    uploadedFileBase64 = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -355,7 +375,6 @@
             document.getElementById('patient-msg').innerText = "Data & Reports dispatched instantly to City Doctor!";
             setTimeout(() => document.getElementById('patient-msg').innerText = "", 3000);
 
-            // Reset form
             document.getElementById('pat-name').value = '';
             document.getElementById('pat-vitals').value = '';
             document.getElementById('pat-symptoms').value = '';
@@ -393,6 +412,26 @@
             document.getElementById('video-modal').classList.add('hidden');
         }
 
+        function openReportModal(encodedData, encodedName) {
+            const data = decodeURIComponent(encodedData);
+            const name = decodeURIComponent(encodedName);
+            
+            document.getElementById('modal-file-title').innerText = "Viewing: " + name;
+            const container = document.getElementById('modal-body-container');
+            
+            if (data.startsWith('data:application/pdf')) {
+                container.innerHTML = `<iframe src="${data}" style="width:100%; height:50vh; border:none;"></iframe>`;
+            } else {
+                container.innerHTML = `<img src="${data}" alt="X-Ray Report">`;
+            }
+            
+            document.getElementById('report-viewer-modal').classList.remove('hidden');
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-viewer-modal').classList.add('hidden');
+        }
+
         function refreshDashboards() {
             const activeUser = JSON.parse(localStorage.getItem('vc_active_user'));
             if(!activeUser) return;
@@ -413,15 +452,17 @@
                         pendingCases.forEach(c => {
                             const isRed = c.urgency === 'red';
                             
-                            // Build report preview UI if file exists
                             let fileHtml = '<p style="font-size:13px; color:#94a3b8; margin-top:5px;">No X-Ray or report attached.</p>';
                             if (c.fileData) {
+                                const safeData = encodeURIComponent(c.fileData);
+                                const safeName = encodeURIComponent(c.fileName);
+                                
                                 fileHtml = `
                                     <div class="report-preview">
                                         <img src="${c.fileData}" class="report-thumbnail" alt="Report">
                                         <div>
                                             <strong>Attached File:</strong> ${c.fileName}<br>
-                                            <a href="${c.fileData}" target="_blank" style="color:var(--primary); font-size:12px;">🔍 View Full Image/PDF</a>
+                                            <a href="javascript:void(0);" onclick="openReportModal('${safeData}', '${safeName}')" style="color:var(--primary); font-size:12px; font-weight:bold;">🔍 View Full Image/PDF</a>
                                         </div>
                                     </div>
                                 `;
