@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VillageCare - Live Hackathon Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ================= CSS ================= */
+        :root {
+            --primary: #2563eb; --primary-hover: #1d4ed8;
+            --doc-theme: #0f766e; --doc-hover: #115e59;
+            --bg-color: #f3f4f6; --card-bg: #ffffff;
+            --text-main: #1f2937; --text-muted: #6b7280;
+            --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); }
+        .hidden { display: none !important; }
+
+        /* --- LOGIN SCREEN --- */
+        .login-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #e0e7ff; padding: 20px; }
+        .demo-credentials { background: #fffbeb; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #92400e; width: 100%; max-width: 800px; display: flex; justify-content: space-between; }
+        .login-card { background: white; width: 100%; max-width: 800px; border-radius: 20px; overflow: hidden; display: flex; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        
+        .login-panel { flex: 1; padding: 40px; text-align: center; }
+        .patient-panel { border-right: 1px solid #e5e7eb; }
+        .panel-icon { font-size: 40px; margin-bottom: 15px; }
+        .login-panel h2 { margin-bottom: 5px; color: var(--primary); }
+        .doc-panel h2 { color: var(--doc-theme); }
+        .login-panel p { color: var(--text-muted); font-size: 13px; margin-bottom: 25px; }
+
+        .input-group { text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #374151; }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); }
+
+        .file-upload-box { border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; background: #f8fafc; display: block; font-size: 13px; color: var(--primary); font-weight: 600; }
+        .file-upload-box input { display: none; }
+
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
+        .btn-patient { background: var(--primary); }
+        .btn-patient:hover { background: var(--primary-hover); }
+        .btn-doc { background: var(--doc-theme); }
+        .btn-doc:hover { background: var(--doc-hover); }
+
+        /* --- DASHBOARD LAYOUT --- */
+        .app-layout { display: flex; height: 100vh; }
+        .sidebar { width: 280px; color: white; padding: 25px; display: flex; flex-direction: column; }
+        .sidebar.patient-sidebar { background: #1e3a8a; }
+        .sidebar.doc-sidebar { background: #134e4a; }
+        .sidebar h2 { margin-bottom: 40px; font-size: 22px; }
+        .sidebar-menu { list-style: none; flex: 1; }
+        .sidebar-menu li { padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.1); font-weight: 600; }
+        
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .live-indicator { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .pulse { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        /* --- TRIAGE (RED/YELLOW) ALERTS --- */
+        .triage-card { display: flex; flex-direction: column; padding: 18px; border-left: 8px solid; border-radius: 8px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); gap: 12px; }
+        .alert-red { border-left-color: var(--danger); background: #fef2f2; animation: urgentPulse 2s infinite; }
+        .alert-yellow { border-left-color: var(--warning); background: #fffbeb; }
+        .data-info h4 { margin-bottom: 5px; font-size: 16px; }
+        .data-info p { font-size: 14px; color: var(--text-muted); margin-bottom: 4px; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-bottom: 8px; }
+        .badge-red { background: var(--danger); }
+        .badge-yellow { background: var(--warning); color: #854d0e; }
+        
+        .report-preview { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #334155; }
+        .report-thumbnail { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
+
+        .prescription-box { border-left: 4px solid var(--success); padding-left: 15px; margin-top: 15px; background: #f9fafb; padding: 15px; border-radius: 8px; }
+
+        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+        @keyframes urgentPulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* --- VIDEO CALL MODAL --- */
+        .video-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .video-grid { display: flex; gap: 20px; margin-bottom: 30px; width: 80%; justify-content: center; }
+        .video-box { background: #1f2937; width: 400px; height: 300px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; border: 2px solid #374151; position: relative; }
+        .name-tag { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 6px; font-size: 13px; }
+        .controls { display: flex; gap: 15px; }
+        .control-btn { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        .btn-mute { background: #374151; color: white; }
+        .btn-end { background: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- ================= 1. LOGIN SCREEN ================= -->
+    <div id="login-screen" class="login-wrapper">
+        
+        <div class="demo-credentials">
+            <div><strong>🧑‍⚕️ PATIENT ACCOUNTS:</strong><br> Users: pat1, pat2, pat3, pat4 <br> Pass: pass1, pass2, pass3, pass4</div>
+            <div><strong>🏥 DOCTOR ACCOUNTS:</strong><br> Users: doc1, doc2, doc3, doc4 <br> Pass: pass1, pass2, pass3, pass4</div>
+        </div>
+
+        <div class="login-card">
+            <div class="login-panel patient-panel">
+                <div class="panel-icon">🛖</div>
+                <h2>Village Center</h2>
+                <p>Login to send patient data</p>
+                <form onsubmit="handleLogin(event, 'patient')">
+                    <div class="input-group">
+                        <label>Patient/Worker Username</label>
+                        <input type="text" id="patient-username" placeholder="e.g. pat1" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="patient-pass" placeholder="e.g. pass1" required>
+                    </div>
+                    <button type="submit" class="btn btn-patient">Secure Login</button>
+                </form>
+            </div>
+
+            <div class="login-panel doc-panel">
+                <div class="panel-icon">🏥</div>
+                <h2>City Hospital</h2>
+                <p>Login to receive data & prescribe</p>
+                <form onsubmit="handleLogin(event, 'doctor')">
+                    <div class="input-group">
+                        <label>Doctor Username</label>
+                        <input type="text" id="doctor-username" placeholder="e.g. doc1" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="doctor-pass" placeholder="e.g. pass1" required>
+                    </div>
+                    <button type="submit" class="btn btn-doc">Secure Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2. PATIENT DASHBOARD ================= -->
+    <div id="patient-dashboard" class="app-layout hidden">
+        <aside class="sidebar patient-sidebar">
+            <h2>🌿 VillageCare</h2>
+            <ul class="sidebar-menu"><li>📤 Send Patient Data</li></ul>
+            <button class="btn" style="background: rgba(255,255,255,0.2); margin-top:auto;" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1 style="color:var(--primary);">Village Health Center</h1>
+                    <p id="patient-welcome-text" style="color:var(--text-muted);"></p>
+                </div>
+                <div class="live-indicator"><div class="pulse"></div> Live Satellite Sync</div>
+            </div>
+
+            <div class="grid-2">
+                <!-- Data Entry Form -->
+                <div class="card">
+                    <h3>1. Enter Patient Details & Reports</h3><br>
+                    <div class="input-group">
+                        <label>Urgency Level (Triage)</label>
+                        <select id="pat-urgency">
+                            <option value="yellow">🟡 Routine (Fever, Cold, Minor Cuts)</option>
+                            <option value="red">🔴 Emergency (Chest Pain, Bleeding, Breathing)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Patient Full Name</label>
+                        <input type="text" id="pat-name" placeholder="e.g. Amit Kumar" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Vitals</label>
+                        <input type="text" id="pat-vitals" placeholder="e.g. BP 120/80, SpO2 97%" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Symptoms</label>
+                        <input type="text" id="pat-symptoms" placeholder="e.g. Severe chest pain for 2 hours" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Upload X-Ray / Medical Report (Image/PDF)</label>
+                        <label class="file-upload-box">
+                            <input type="file" id="pat-file" accept="image/*,.pdf" onchange="previewFile(event)">
+                            <span id="file-label">📁 Click to browse X-Ray or Report file</span>
+                        </label>
+                    </div>
+                    <button class="btn btn-patient" onclick="sendDataToDoctor()">🚀 Send Data & Reports to City Doctor</button>
+                    <p id="patient-msg" style="color:var(--success); margin-top:10px; font-weight:bold;"></p>
+                </div>
+
+                <!-- Received Prescriptions -->
+                <div class="card">
+                    <h3>2. My Received Prescriptions</h3>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Private records sent specifically to your account.</p>
+                    <div id="patient-prescriptions-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= 3. DOCTOR DASHBOARD ================= -->
+    <div id="doc-dashboard" class="app-layout hidden">
+        <aside class="sidebar doc-sidebar">
+            <h2>🏥 City Command</h2>
+            <ul class="sidebar-menu"><li>📥 Live Triage Queue</li></ul>
+            <button class="btn" style="background: rgba(255,255,255,0.2); margin-top:auto;" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1 style="color:var(--doc-theme);">Specialist Dashboard</h1>
+                    <p id="doc-welcome-text" style="color:var(--text-muted);"></p>
+                </div>
+                <div class="live-indicator"><div class="pulse"></div> Live Satellite Sync</div>
+            </div>
+
+            <div class="card">
+                <h3>Live Incoming Data Feed & Patient Reports</h3>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Review attached X-Rays, lab reports, and vitals sent from villages.</p>
+                <div id="doc-incoming-queue"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= 4. VIDEO CALL MODAL ================= -->
+    <div id="video-modal" class="video-modal hidden">
+        <h2 style="color:white; margin-bottom:20px; display:flex; align-items:center; gap:10px;"><div class="pulse"></div> Encrypted Satellite Video Link</h2>
+        <div class="video-grid">
+            <div class="video-box">
+                <span style="font-size:50px;">👤</span>
+                <p style="margin-top:10px; color:#9ca3af;">Receiving Feed...</p>
+                <div class="name-tag" id="remote-video-name">Remote User</div>
+            </div>
+            <div class="video-box">
+                <span style="font-size:50px;">🎥</span>
+                <p style="margin-top:10px; color:#9ca3af;">Camera Active</p>
+                <div class="name-tag">You (Local)</div>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="control-btn btn-mute">🎤</button>
+            <button class="control-btn btn-end" onclick="endVideoCall()">📞</button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ENGINE ================= -->
+    <script>
+        const VALID_PATIENTS = { 'pat1': 'pass1', 'pat2': 'pass2', 'pat3': 'pass3', 'pat4': 'pass4' };
+        const VALID_DOCTORS = { 'doc1': 'pass1', 'doc2': 'pass2', 'doc3': 'pass3', 'doc4': 'pass4' };
+
+        if (!localStorage.getItem('vc_live_cases')) localStorage.setItem('vc_live_cases', JSON.stringify([]));
+
+        let uploadedFileBase64 = null;
+        let uploadedFileName = null;
+
+        // Handle File Selection and convert to dataURL for cross-tab sharing
+        function previewFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedFileName = file.name;
+                document.getElementById('file-label').innerText = "📄 Selected: " + file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedFileBase64 = e.target.result; // Saves image/pdf as string data
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        window.addEventListener('storage', (e) => {
+            refreshDashboards();
+            if (e.key === 'vc_active_video_call') {
+                const callData = localStorage.getItem('vc_active_video_call');
+                if (callData) {
+                    document.getElementById('video-modal').classList.remove('hidden');
+                    document.getElementById('remote-video-name').innerText = "Connected via Satellite";
+                } else {
+                    document.getElementById('video-modal').classList.add('hidden');
+                }
+            }
+        });
+
+        function handleLogin(e, role) {
+            e.preventDefault();
+            const username = document.getElementById(`${role}-username`).value.trim();
+            const password = document.getElementById(`${role}-pass`).value;
+
+            if (role === 'patient') {
+                if (VALID_PATIENTS[username] !== password) return alert("❌ Invalid Patient Credentials!");
+            } else {
+                if (VALID_DOCTORS[username] !== password) return alert("❌ Invalid Doctor Credentials!");
+            }
+            
+            localStorage.setItem('vc_active_user', JSON.stringify({ username, role }));
+            routeUser();
+        }
+
+        function logout() {
+            localStorage.removeItem('vc_active_user');
+            location.reload();
+        }
+
+        document.addEventListener('DOMContentLoaded', routeUser);
+
+        function routeUser() {
+            const user = JSON.parse(localStorage.getItem('vc_active_user'));
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('patient-dashboard').classList.add('hidden');
+            document.getElementById('doc-dashboard').classList.add('hidden');
+
+            if (!user) {
+                document.getElementById('login-screen').classList.remove('hidden');
+                return;
+            }
+
+            if (user.role === 'patient') {
+                document.getElementById('patient-dashboard').classList.remove('hidden');
+                document.getElementById('patient-welcome-text').innerText = `Logged in as Patient/Worker: ${user.username.toUpperCase()}`;
+            } else if (user.role === 'doctor') {
+                document.getElementById('doc-dashboard').classList.remove('hidden');
+                document.getElementById('doc-welcome-text').innerText = `Logged in as Doctor: ${user.username.toUpperCase()}`;
+            }
+            refreshDashboards();
+        }
+
+        function sendDataToDoctor() {
+            const user = JSON.parse(localStorage.getItem('vc_active_user'));
+            const name = document.getElementById('pat-name').value;
+            const vitals = document.getElementById('pat-vitals').value;
+            const symptoms = document.getElementById('pat-symptoms').value;
+            const urgency = document.getElementById('pat-urgency').value;
+
+            if(!name || !symptoms || !vitals) return alert("Please fill all fields.");
+
+            const newCase = {
+                id: Date.now(),
+                senderAccount: user.username,
+                patientName: name,
+                urgency: urgency,
+                vitals: vitals,
+                symptoms: symptoms,
+                fileName: uploadedFileName || null,
+                fileData: uploadedFileBase64 || null,
+                prescription: null
+            };
+
+            let cases = JSON.parse(localStorage.getItem('vc_live_cases'));
+            cases.push(newCase);
+            localStorage.setItem('vc_live_cases', JSON.stringify(cases));
+
+            document.getElementById('patient-msg').innerText = "Data & Reports dispatched instantly to City Doctor!";
+            setTimeout(() => document.getElementById('patient-msg').innerText = "", 3000);
+
+            // Reset form
+            document.getElementById('pat-name').value = '';
+            document.getElementById('pat-vitals').value = '';
+            document.getElementById('pat-symptoms').value = '';
+            document.getElementById('pat-file').value = '';
+            document.getElementById('file-label').innerText = "📁 Click to browse X-Ray or Report file";
+            uploadedFileBase64 = null;
+            uploadedFileName = null;
+            
+            refreshDashboards();
+        }
+
+        function sendPrescription(caseId) {
+            const medicine = document.getElementById(`med-input-${caseId}`).value;
+            if(!medicine) return alert("Please write a prescription.");
+
+            const docName = JSON.parse(localStorage.getItem('vc_active_user')).username;
+            let cases = JSON.parse(localStorage.getItem('vc_live_cases'));
+            const caseIndex = cases.findIndex(c => c.id === caseId);
+            
+            cases[caseIndex].prescription = { medicine: medicine, doctorName: docName.toUpperCase(), time: new Date().toLocaleTimeString() };
+            localStorage.setItem('vc_live_cases', JSON.stringify(cases));
+            alert("Prescription sent to the specific patient's account instantly!");
+            
+            refreshDashboards();
+        }
+
+        function triggerVideoCall(patientName) {
+            localStorage.setItem('vc_active_video_call', patientName);
+            document.getElementById('video-modal').classList.remove('hidden');
+            document.getElementById('remote-video-name').innerText = patientName + " (Village Center)";
+        }
+
+        function endVideoCall() {
+            localStorage.removeItem('vc_active_video_call');
+            document.getElementById('video-modal').classList.add('hidden');
+        }
+
+        function refreshDashboards() {
+            const activeUser = JSON.parse(localStorage.getItem('vc_active_user'));
+            if(!activeUser) return;
+
+            const cases = JSON.parse(localStorage.getItem('vc_live_cases')) || [];
+            
+            // ================= DOCTOR DASHBOARD =================
+            if (activeUser.role === 'doctor') {
+                const docQueue = document.getElementById('doc-incoming-queue');
+                if (docQueue) {
+                    docQueue.innerHTML = '';
+                    const pendingCases = cases.filter(c => c.prescription === null);
+                    pendingCases.sort((a, b) => a.urgency === 'red' ? -1 : 1);
+
+                    if (pendingCases.length === 0) {
+                        docQueue.innerHTML = '<p style="color:green; font-weight:bold;">No pending patients. Queue is clear!</p>';
+                    } else {
+                        pendingCases.forEach(c => {
+                            const isRed = c.urgency === 'red';
+                            
+                            // Build report preview UI if file exists
+                            let fileHtml = '<p style="font-size:13px; color:#94a3b8; margin-top:5px;">No X-Ray or report attached.</p>';
+                            if (c.fileData) {
+                                fileHtml = `
+                                    <div class="report-preview">
+                                        <img src="${c.fileData}" class="report-thumbnail" alt="Report">
+                                        <div>
+                                            <strong>Attached File:</strong> ${c.fileName}<br>
+                                            <a href="${c.fileData}" target="_blank" style="color:var(--primary); font-size:12px;">🔍 View Full Image/PDF</a>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            docQueue.innerHTML += `
+                                <div class="triage-card ${isRed ? 'alert-red' : 'alert-yellow'}">
+                                    <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start;">
+                                        <div class="data-info">
+                                            <span class="badge ${isRed ? 'badge-red' : 'badge-yellow'}">
+                                                ${isRed ? '🔴 EMERGENCY' : '🟡 ROUTINE'}
+                                            </span>
+                                            <h4>Patient: ${c.patientName} <span style="font-size:12px; font-weight:normal; color:#6b7280;">(Sent by: ${c.senderAccount})</span></h4>
+                                            <p><strong>Vitals:</strong> ${c.vitals}</p>
+                                            <p><strong>Symptoms:</strong> ${c.symptoms}</p>
+                                            ${fileHtml}
+                                        </div>
+                                        <button class="btn" style="background:#4f46e5; width:150px;" onclick="triggerVideoCall('${c.patientName}')">📹 Start Video Call</button>
+                                    </div>
+                                    <div style="width:100%; display:flex; gap:10px; margin-top:10px;">
+                                        <input type="text" id="med-input-${c.id}" placeholder="Type prescription here..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                                        <button class="btn btn-doc" style="width:150px;" onclick="sendPrescription(${c.id})">Send Prescription</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                }
+            }
+
+            // ================= PATIENT DASHBOARD =================
+            if (activeUser.role === 'patient') {
+                const patPrescriptions = document.getElementById('patient-prescriptions-list');
+                if (patPrescriptions) {
+                    patPrescriptions.innerHTML = '';
+                    const myResolvedCases = cases.filter(c => c.senderAccount === activeUser.username && c.prescription !== null);
+
+                    if (myResolvedCases.length === 0) {
+                        patPrescriptions.innerHTML = '<p>No prescriptions received for your account yet.</p>';
+                    } else {
+                        myResolvedCases.slice().reverse().forEach(c => {
+                            patPrescriptions.innerHTML += `
+                                <div class="prescription-box">
+                                    <h4 style="color:var(--primary);">For: ${c.patientName}</h4>
+                                    <p style="color:var(--success); font-weight:bold; margin:5px 0;">✅ Prescription Received</p>
+                                    <p><strong>Medicine:</strong> ${c.prescription.medicine}</p>
+                                    <p style="font-size:12px; margin-top:5px; color:var(--text-muted);"><strong>From:</strong> Dr. ${c.prescription.doctorName} at ${c.prescription.time}</p>
+                                </div>
+                            `;
+                        });
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
